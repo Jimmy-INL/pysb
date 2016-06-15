@@ -15,6 +15,18 @@ def h1(individual):
     return -1 * num / denum,
 
 
+def h1_returns_float(individual):
+    """ Simple two-dimensional function containing several local maxima.
+    Found in deap.benchmarks.h1
+    Defined range of [-100, 100]
+    minimum is at f(8.6998, 6.7665) = 2
+    returns a float, which should raise error
+    """
+    num = (np.sin(individual[0] - individual[1] / 8)) ** 2 + (np.sin(individual[1] + individual[0] / 8)) ** 2
+    denum = ((individual[0] - 8.6998) ** 2 + (individual[1] - 6.7665) ** 2) ** 0.5 + 1
+    return -1 * num / denum
+
+
 def himmelblau(individual):
     """The Himmelblau's function is multimodal with 4 defined minimums in
     :math:`[-6, 6]^2.
@@ -79,3 +91,26 @@ def test_mismatched_bounds():
 def test_no_bounds():
     pso = PSO(start=[10, 0], cost_function=himmelblau, verbose=False)
     pso.run(num_iterations=100, num_particles=10)
+
+
+@raises(AssertionError)
+def test_cost_function_tuple():
+    """ test to see if PSO can find simple minimum
+    """
+    minimums = [[3.0, 2.0],
+                [-2.805118, 3.131312],
+                [-3.779310, -3.283186],
+                [3.584428, -1.848126]]
+
+    pso = PSO(cost_function=h1_returns_float, start=[10, 0], verbose=False)
+    pso.set_bounds(lower=[-100, -100], upper=[100, 100])
+    pso.run(num_iterations=100, num_particles=10)
+    good_min = False
+    for i in minimums:
+        if np.sum((pso.best - i) ** 2) < .1:
+            good_min = True
+            error = np.sum((pso.best - i) ** 2)
+            found_min = i
+    if good_min:
+        print('Found minimum')
+        print('True value: {0}. Found:{1}. Error^2 = {2}'.format(found_min, pso.best, error))
