@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import multiprocessing
+
 import numpy as np
 from deap import base
 from deap import creator
@@ -34,7 +35,7 @@ class PSO:
 
         """
 
-    def __init__(self, cost_function=None, start=None, save_sampled=False, verbose=False):
+    def __init__(self, cost_function=None, start=None, num_proc=1, save_sampled=False, verbose=False):
         """
 
         :param cost_function:
@@ -44,12 +45,14 @@ class PSO:
 
         self.cost_function = cost_function
         self.save_sampled = save_sampled
-        self.start = start
-        self.size = None
-        if self.start is not None:
+        if start is not None:
             self.set_start_position(start)
+        else:
+            self.start = None
+            self.size = None
         self.verbose = verbose
         self.method = 'single_min'
+        self.num_proc = num_proc
         self.best = None
         self.max_speed = None
         self.min_speed = None
@@ -104,7 +107,7 @@ class PSO:
 
         :return:
         """
-        return self.best_history
+        return self.history
 
     def _update_particle_position(self, part, phi1, phi2):
         """ Updates particles position
@@ -165,7 +168,7 @@ class PSO:
         self.stats.register("max", np.max, axis=0)
 
         self.logbook.header = ["iteration", "best"] + self.stats.fields
-        pool = multiprocessing.Pool(4)
+        pool = multiprocessing.Pool(self.num_proc)
         self.toolbox.register("map", pool.map)
         self.toolbox.register("close", pool.close)
         self._is_setup = True
@@ -202,7 +205,7 @@ class PSO:
         :param position: vector of parameters
         :return:
         """
-        self.start = position
+        self.start = np.array(position)
         self.size = len(position)
 
     def set_speed(self, speed_min=-10000, speed_max=10000):
@@ -211,7 +214,7 @@ class PSO:
 
 
         :param speed_min: negative scalar
-        :param speed_max: negative scalar
+        :param speed_max: positive scalar
         :return:
         """
         self.min_speed = speed_min
@@ -249,7 +252,7 @@ class PSO:
         self.ub = upper
         self.bounds_set = True
 
-    def run(self, num_particles, num_iterations):
+    def run(self, num_particles, num_iterations, save_samples=False):
         """ runs the pso
 
         :param num_particles:
@@ -264,7 +267,7 @@ class PSO:
                                                               "is occuring when running your starting position"
 
         history = np.zeros((num_iterations, len(self.start)))
-        if self.save_sampled:
+        if self.save_sampled or save_samples:
             self.all_history = np.zeros((num_iterations, num_particles, len(self.start)))
             self.all_fitness = np.zeros((num_iterations, num_particles))
         values = np.zeros(num_iterations)
@@ -280,7 +283,7 @@ class PSO:
                 self.toolbox.update(part)
             values[g - 1] = self.best.fitness.values[0]
             history[g - 1] = self.best
-            if self.save_sampled:
+            if self.save_sampled or save_samples:
                 curr_fit, curr_pop = self.return_ranked_populations()
                 self.all_history[g - 1, :, :] = curr_pop
                 self.all_fitness[g - 1, :] = curr_fit

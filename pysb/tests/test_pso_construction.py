@@ -93,6 +93,12 @@ def test_no_bounds():
     pso.run(num_iterations=100, num_particles=10)
 
 
+def test_single_float_bound():
+    pso = PSO(start=[10, 0], cost_function=himmelblau, verbose=False)
+    pso.set_bounds(parameter_range=2.)
+    pso.run(num_iterations=100, num_particles=10)
+
+
 @raises(AssertionError)
 def test_cost_function_tuple():
     """ test to see if PSO can find simple minimum
@@ -114,3 +120,44 @@ def test_cost_function_tuple():
     if good_min:
         print('Found minimum')
         print('True value: {0}. Found:{1}. Error^2 = {2}'.format(found_min, pso.best, error))
+
+
+def test_set_population_contraction():
+    pso = PSO(start=[10, 0], cost_function=himmelblau, verbose=False)
+    assert (pso.update_w is True)
+    pso.set_w(False)
+    assert (pso.update_w is False)
+    pso.set_cost_function(cost_function=himmelblau)
+    assert (pso.cost_function == himmelblau)
+
+
+def test_set_cost_function():
+    pso = PSO(start=[10, 0], verbose=False)
+    assert (pso.cost_function is None)
+    pso.set_cost_function(cost_function=himmelblau)
+    assert (pso.cost_function == himmelblau)
+
+
+def test_pso_history():
+    pso = PSO(cost_function=himmelblau, start=[10, 0], verbose=False)
+    pso.set_bounds(lower=[-100, -100], upper=[100, 100])
+    pso.run(num_iterations=100, num_particles=10)
+    assert (pso.all_history is None)
+    pso = PSO(cost_function=himmelblau, start=[10, 0], verbose=False)
+    pso.set_bounds(lower=[-100, -100], upper=[100, 100])
+    pso.run(num_iterations=100, num_particles=10, save_samples=True)
+    isinstance(type(pso.all_history), type(np.array))
+    pso.get_history()
+
+
+def test_verbose():
+    pso = PSO(cost_function=himmelblau, start=[10, 0], verbose=True)
+    pso.set_bounds(lower=[-100, -100], upper=[100, 100])
+    pso.run(num_iterations=100, num_particles=10)
+
+
+def test_get_best():
+    pso = PSO(cost_function=himmelblau, start=[10, 0], verbose=False)
+    pso.set_bounds(lower=[-100, -100], upper=[100, 100])
+    pso.run(num_iterations=100, num_particles=10)
+    isinstance(pso.get_best_value(), tuple)
