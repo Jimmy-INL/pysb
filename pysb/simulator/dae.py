@@ -194,6 +194,7 @@ class DaeSimulator(Simulator):
                                    len(self._model.species)))
 
         for n in range(n_sims):
+            self._logger.info('Running simulation %d of %d', n + 1, n_sims)
             self._pdmodel.param_vec = self.param_values[n]
             t0 = self.tspan[0]
             tout = [t0]
@@ -212,6 +213,7 @@ class DaeSimulator(Simulator):
 
             tout_all.append(tout)
 
+        self._logger.info('All simulation(s) complete')
         return SimulationResult(self, tout_all, trajectories)
 
 
